@@ -8,11 +8,9 @@ const env = require('./config/env');
 // Connect to MongoDB
 connectDB();
 
-const PORT = env.port || process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
-const server = http.createServer(app);
-
-server.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(` CivicTrack Backend API Server running on port ${PORT}`);
   console.log(` Environment: ${env.nodeEnv}`);

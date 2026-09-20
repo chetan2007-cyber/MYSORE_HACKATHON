@@ -3,8 +3,13 @@ const mongoose = require('mongoose');
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const Issue = require('./models/Issue');
 
+try {
+  require('dns').setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (e) {}
+
 const BASE_URL = 'http://localhost:5000/api';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/civictrack';
+const PRIMARY_MONGO_URI = process.env.MONGO_URI;
+const FALLBACK_MONGO_URI = 'mongodb://127.0.0.1:27017/civictrack';
 
 async function runComprehensiveAudit() {
   console.log('\n================================================================');
@@ -25,8 +30,14 @@ async function runComprehensiveAudit() {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('[Setup] Connected to local MongoDB.\n');
+    try {
+      await mongoose.connect(PRIMARY_MONGO_URI);
+      console.log('[Setup] Connected to primary MongoDB.\n');
+    } catch (primaryErr) {
+      console.log('[Setup] Primary failed, connecting to fallback local MongoDB.\n');
+      await mongoose.connect(FALLBACK_MONGO_URI);
+      console.log('[Setup] Connected to fallback local MongoDB.\n');
+    }
 
     // -------------------------------------------------------------
     // PHASE G: BAD INPUT & NEGATIVE ABUSE TESTING

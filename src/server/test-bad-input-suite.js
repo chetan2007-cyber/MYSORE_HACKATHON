@@ -6,8 +6,13 @@ const FormData = require('form-data');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const Issue = require('./models/Issue');
 
+try {
+  require('dns').setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (e) {}
+
 const BASE_URL = 'http://localhost:5000/api';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/civictrack';
+const PRIMARY_MONGO_URI = process.env.MONGO_URI;
+const FALLBACK_MONGO_URI = 'mongodb://127.0.0.1:27017/civictrack';
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 async function runBadInputVerificationSuite() {
@@ -30,8 +35,14 @@ async function runBadInputVerificationSuite() {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('[Test Setup] Connected to MongoDB for authoritative database verification.\n');
+    try {
+      await mongoose.connect(PRIMARY_MONGO_URI);
+      console.log('[Test Setup] Connected to primary MongoDB for authoritative verification.\n');
+    } catch (primaryErr) {
+      console.log('[Test Setup] Primary connection failed, connecting to fallback local MongoDB...\n');
+      await mongoose.connect(FALLBACK_MONGO_URI);
+      console.log('[Test Setup] Connected to fallback local MongoDB.\n');
+    }
 
     // Acquire Citizen JWT
     console.log('--- Step 0: Citizen Authentication ---');

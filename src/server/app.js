@@ -25,6 +25,54 @@ const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
+// Parse and normalize configured origins from CLIENT_URL
+const parseConfiguredOrigins = (raw) => {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => s.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+};
+
+const configuredOrigins = parseConfiguredOrigins(env.clientUrl || process.env.CLIENT_URL);
+const localOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173'
+];
+
+const allowedOrigins = env.isProduction
+  ? configuredOrigins
+  : Array.from(new Set([...localOrigins, ...configuredOrigins]));
+
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const cleanOrigin = origin.replace(/\/+$/, '');
+
+  if (allowedOrigins.includes(cleanOrigin)) return true;
+
+  if (!env.isProduction) {
+    if (cleanOrigin.includes('localhost') || cleanOrigin.includes('127.0.0.1')) {
+      return true;
+    }
+  }
+
+  for (const pattern of configuredOrigins) {
+    if (pattern.includes('*')) {
+      const regexPattern = new RegExp(
+        '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
+      );
+      if (regexPattern.test(cleanOrigin)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 // Security Headers via Helmet
 app.use(
   helmet({
@@ -35,7 +83,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tile.openstreetmap.org'],
-        connectSrc: ["'self'", env.clientUrl, 'http://localhost:5000', 'http://localhost:5173'].filter(Boolean),
+        connectSrc: ["'self'", ...allowedOrigins, 'https://*.tile.openstreetmap.org'].filter(Boolean),
         objectSrc: ["'none'"],
         mediaSrc: ["'self'", 'data:', 'blob:']
       }
@@ -47,20 +95,14 @@ app.use(
 // Cookie Parser for HttpOnly Auth Token cookies
 app.use(cookieParser());
 
-// CORS setup based on environment configuration
-const allowedOrigins = env.isProduction
-  ? env.clientUrl
-    ? env.clientUrl.split(',').map((s) => s.trim())
-    : []
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', env.clientUrl].filter(Boolean);
-
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || (!env.isProduction && origin.includes('localhost'))) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS Error: Origin '${origin}' is not permitted by CORS policy.`));
+        // Return false to reject CORS cleanly without throwing an unhandled 500 error
+        callback(null, false);
       }
     },
     credentials: true,

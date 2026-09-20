@@ -12,6 +12,7 @@ import {
   Clock
 } from 'lucide-react';
 import { formatDateTime, formatTimeAgo } from '../utils/formatters';
+import { getMediaUrl } from '../config/env';
 import StatusBadge from './StatusBadge';
 
 const CaseTimeline = ({ timeline = [], attachments = [] }) => {
@@ -119,13 +120,13 @@ const CaseTimeline = ({ timeline = [], attachments = [] }) => {
                 {item.attachments.map((att, attIdx) => (
                   <a
                     key={attIdx}
-                    href={att.path}
+                    href={getMediaUrl(att.path)}
                     target="_blank"
                     rel="noreferrer"
                     className="group/att block w-20 h-16 rounded border border-slate-200 overflow-hidden bg-slate-100 hover:border-brand-400 transition"
                   >
                     <img
-                      src={att.path}
+                      src={getMediaUrl(att.path)}
                       alt={att.filename}
                       className="w-full h-full object-cover group-hover/att:scale-105 transition"
                     />

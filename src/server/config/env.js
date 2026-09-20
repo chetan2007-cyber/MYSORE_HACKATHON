@@ -35,7 +35,13 @@ if (isProduction) {
   mongoUri = rawMongoUri || 'mongodb://127.0.0.1:27017/civictrack';
 }
 
-const clientUrl = process.env.CLIENT_URL || (isProduction ? '' : 'http://localhost:5173');
+// Clean and normalize client URLs (removes trailing slashes)
+const rawClientUrl = process.env.CLIENT_URL || (isProduction ? '' : 'http://localhost:5173');
+const clientUrl = rawClientUrl
+  .split(',')
+  .map(url => url.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+  .join(',');
 
 const port = parseInt(process.env.PORT || '5000', 10);
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1d';

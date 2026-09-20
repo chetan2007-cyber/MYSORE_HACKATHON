@@ -1,0 +1,43 @@
+# Render Blueprint Specification for CivicTrack
+# Deploys both Node.js Express Backend and React Vite Static Site
+services:
+  # 1. Backend Web Service
+  - type: web
+    name: civictrack-backend
+    env: node
+    rootDir: src/server
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: OTP_DEV_MODE
+        value: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+
+  # 2. Frontend Static Site
+  - type: static
+    name: civictrack-frontend
+    rootDir: src/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      # Single Page Application (SPA) client-side routing fallback
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://civictrack-backend-rsy2.onrender.com/api

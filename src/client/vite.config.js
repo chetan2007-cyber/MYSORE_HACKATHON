@@ -77,7 +77,7 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^\/api\/.*/i,
+            urlPattern: /\/api\/.*/i,
             handler: 'NetworkOnly'
           }
         ]
@@ -88,11 +88,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: process.env.VITE_DEV_BACKEND_URL || 'http://localhost:5000',
         changeOrigin: true
       },
       '/uploads': {
-        target: 'http://localhost:5000',
+        target: process.env.VITE_DEV_BACKEND_URL || 'http://localhost:5000',
         changeOrigin: true
       }
     }

@@ -4,8 +4,13 @@ const { randomUUID } = require('crypto');
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const Issue = require('./models/Issue');
 
+try {
+  require('dns').setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (e) {}
+
 const BASE_URL = 'http://localhost:5000/api';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/civictrack';
+const PRIMARY_MONGO_URI = process.env.MONGO_URI;
+const FALLBACK_MONGO_URI = 'mongodb://127.0.0.1:27017/civictrack';
 
 async function runIdempotencyTests() {
   console.log('\n=============================================================');
@@ -26,8 +31,14 @@ async function runIdempotencyTests() {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('[Test Setup] Connected to MongoDB for direct verification.\n');
+    try {
+      await mongoose.connect(PRIMARY_MONGO_URI);
+      console.log('[Test Setup] Connected to primary MongoDB for direct verification.\n');
+    } catch (primaryErr) {
+      console.log('[Test Setup] Primary connection failed, connecting to fallback local MongoDB...\n');
+      await mongoose.connect(FALLBACK_MONGO_URI);
+      console.log('[Test Setup] Connected to fallback local MongoDB.\n');
+    }
 
     // 1. Authenticate as Citizen
     console.log('--- Step 1: Citizen Session Acquisition ---');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, CheckCircle2, AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { formatDateTime } from '../utils/formatters';
+import { getMediaUrl } from '../config/env';
 
 const EvidenceViewer = ({ resolution, attachments = [] }) => {
   const [activeModalImage, setActiveModalImage] = useState(null);
@@ -47,7 +48,7 @@ const EvidenceViewer = ({ resolution, attachments = [] }) => {
                   className="group relative aspect-4/3 rounded border border-slate-200 overflow-hidden bg-slate-100 cursor-pointer"
                 >
                   <img
-                    src={img}
+                    src={getMediaUrl(img)}
                     alt={`Before evidence ${idx + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                   />
@@ -85,7 +86,7 @@ const EvidenceViewer = ({ resolution, attachments = [] }) => {
                   className="group relative aspect-4/3 rounded border border-slate-200 overflow-hidden bg-slate-100 cursor-pointer"
                 >
                   <img
-                    src={img}
+                    src={getMediaUrl(img)}
                     alt={`After evidence ${idx + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                   />
@@ -175,7 +176,7 @@ const EvidenceViewer = ({ resolution, attachments = [] }) => {
               <X className="w-4 h-4" />
             </button>
             <img
-              src={activeModalImage}
+              src={getMediaUrl(activeModalImage)}
               alt="Enlarged evidence"
               className="max-h-[80vh] w-auto rounded object-contain"
             />
