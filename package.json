@@ -1,0 +1,12 @@
+{
+  "name": "civictrack-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CivicTrack Root Orchestrator",
+  "scripts": {
+    "start": "cd src/server && node server.js",
+    "build": "cd src/server && npm install",
+    "build:client": "cd src/client && npm install && npm run build",
+    "build:server": "cd src/server && npm install"
+  }
+}
