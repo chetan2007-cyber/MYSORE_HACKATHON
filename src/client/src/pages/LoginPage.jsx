@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, AlertCircle, Loader2, KeyRound, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { DEMO_PERSONAS } from '../constants';
+import env from '../config/env';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -135,29 +136,33 @@ const LoginPage = () => {
       </form>
 
       {/* Demo Quick Logins */}
-      <div className="pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
-            <KeyRound className="w-3.5 h-3.5 text-brand-600" />
-            1-Click Demo Personas:
-          </span>
-          <span className="text-[10px] text-slate-400">Development Mode</span>
+      {env.enableDemoLogin && (
+        <div className="pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
+              <KeyRound className="w-3.5 h-3.5 text-brand-600" />
+              1-Click Demo Personas:
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium text-slate-500 bg-slate-100">
+              {env.isDev ? 'Development Mode' : 'Hackathon Evaluation Mode'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            {DEMO_PERSONAS.map((p) => (
+              <button
+                key={p.role}
+                type="button"
+                onClick={() => handleDemoLogin(p.role)}
+                disabled={loading}
+                className="px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-left transition text-[11px]"
+              >
+                <div className="font-semibold text-slate-800 truncate">{p.label}</div>
+                <div className="text-[10px] text-slate-400 truncate">{p.name.split(' ')[0]}</div>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-          {DEMO_PERSONAS.map((p) => (
-            <button
-              key={p.role}
-              type="button"
-              onClick={() => handleDemoLogin(p.role)}
-              disabled={loading}
-              className="px-2 py-1.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-left transition text-[11px]"
-            >
-              <div className="font-semibold text-slate-800 truncate">{p.label}</div>
-              <div className="text-[10px] text-slate-400 truncate">{p.name.split(' ')[0]}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="text-center pt-2 text-xs text-slate-500 space-y-1.5">
         <div>

@@ -1,10 +1,17 @@
 // Centralized environment configuration for CivicTrack frontend
 
-const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
-const apiUrl = rawApiUrl.replace(/\/+$/, '');
+const defaultProdApiUrl = 'https://civictrack-backend-rsy2.onrender.com/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? defaultProdApiUrl : '/api');
+const cleanApiUrl = rawApiUrl.replace(/\/+$/, '');
+// Ensure apiUrl points to /api even if configured as a bare domain (e.g. https://civictrack-backend-rsy2.onrender.com)
+const apiUrl = (cleanApiUrl.startsWith('http') && !cleanApiUrl.endsWith('/api'))
+  ? `${cleanApiUrl}/api`
+  : cleanApiUrl;
+
 const mode = import.meta.env.MODE || 'development';
 const isDev = import.meta.env.DEV || mode === 'development';
 const isProd = import.meta.env.PROD || mode === 'production';
+const enableDemoLogin = import.meta.env.VITE_ENABLE_DEMO_LOGIN !== 'false';
 
 // Compute backend origin URL for media assets (strips trailing /api)
 const backendOrigin = apiUrl.startsWith('http')
@@ -34,7 +41,8 @@ export const env = {
   backendOrigin,
   mode,
   isDev,
-  isProd
+  isProd,
+  enableDemoLogin
 };
 
 export default env;

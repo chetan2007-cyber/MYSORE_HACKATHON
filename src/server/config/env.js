@@ -57,6 +57,8 @@ module.exports = {
   nodeEnv,
   isProduction,
   isDevelopment,
+  isProd: isProduction,
+  isDev: isDevelopment,
   port,
   mongoUri,
   jwtSecret,

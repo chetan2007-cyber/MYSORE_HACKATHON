@@ -34,6 +34,11 @@ const parseConfiguredOrigins = (raw) => {
     .filter(Boolean);
 };
 
+const defaultOrigins = [
+  'https://mysore-hackathon.vercel.app',
+  'https://civictrack-backend-rsy2.onrender.com'
+];
+
 const configuredOrigins = parseConfiguredOrigins(env.clientUrl || process.env.CLIENT_URL);
 const localOrigins = [
   'http://localhost:5173',
@@ -43,15 +48,23 @@ const localOrigins = [
   'http://127.0.0.1:4173'
 ];
 
-const allowedOrigins = env.isProduction
-  ? configuredOrigins
-  : Array.from(new Set([...localOrigins, ...configuredOrigins]));
+const allowedOrigins = Array.from(new Set([
+  ...defaultOrigins,
+  ...configuredOrigins,
+  ...(!env.isProduction ? localOrigins : [])
+]));
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
   const cleanOrigin = origin.replace(/\/+$/, '');
 
   if (allowedOrigins.includes(cleanOrigin)) return true;
+
+  // Vercel deployment subdomains (e.g. preview and production)
+  if (/^https:\/\/[a-z0-9-_.]+\.vercel\.app$/i.test(cleanOrigin)) return true;
+
+  // Render deployment subdomains
+  if (/^https:\/\/[a-z0-9-_.]+\.onrender\.com$/i.test(cleanOrigin)) return true;
 
   if (!env.isProduction) {
     if (cleanOrigin.includes('localhost') || cleanOrigin.includes('127.0.0.1')) {
@@ -73,6 +86,23 @@ function isOriginAllowed(origin) {
   return false;
 }
 
+// Early CORS and Preflight Response Middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && isOriginAllowed(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Idempotency-Key, Idempotency-Key');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+
 // Security Headers via Helmet
 app.use(
   helmet({
@@ -83,7 +113,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tile.openstreetmap.org'],
-        connectSrc: ["'self'", ...allowedOrigins, 'https://*.tile.openstreetmap.org'].filter(Boolean),
+        connectSrc: ["'self'", ...allowedOrigins, 'https://*.tile.openstreetmap.org', 'https://*.vercel.app', 'https://*.onrender.com'].filter(Boolean),
         objectSrc: ["'none'"],
         mediaSrc: ["'self'", 'data:', 'blob:']
       }
@@ -126,22 +156,26 @@ if (env.isDevelopment) {
 // Serve uploaded media files locally
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Production-ready health check endpoint
-app.get('/api/health', (req, res) => {
+// Production-ready health check endpoint (handles both /health and /api/health)
+const healthCheckHandler = (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
-  res.status(200).json({
-    status: 'ok',
+  const status = isDbConnected ? 'ok' : 'degraded';
+  res.status(isDbConnected ? 200 : 503).json({
+    status,
     database: isDbConnected ? 'connected' : 'disconnected',
     system: 'CivicTrack API',
     version: '1.0.0',
     timestamp: new Date().toISOString()
   });
-});
+};
+
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 // Apply rate limiting to all /api/ routes
 app.use('/api', apiLimiter);
 
-// Mount API routes
+// Mount primary API routes under /api
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/staff', staffRoutes);
@@ -155,8 +189,21 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+// Interoperability aliases: mount top-level routes to gracefully serve frontends configured without /api
+app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
+app.use('/staff', staffRoutes);
+app.use('/supervisor', supervisorRoutes);
+app.use('/issues', issueRoutes);
+app.use('/escalations', escalationRoutes);
+app.use('/departments', departmentRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/audit-logs', auditRoutes);
+app.use('/notifications', notificationRoutes);
+
 // 404 JSON handler for unknown API routes
-app.all('/api/*', (req, res) => {
+app.all(['/api/*', '/auth/*', '/issues/*'], (req, res) => {
   res.status(404).json({
     success: false,
     error: 'Route not found',

@@ -9,6 +9,13 @@ const errorHandler = (err, req, res, next) => {
     console.error(err.stack);
   }
 
+  // Ensure CORS headers are preserved on error responses
+  const origin = req.headers && req.headers.origin;
+  if (origin && !res.getHeader('Access-Control-Allow-Origin')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = `Resource not found with ID of ${err.value}`;
