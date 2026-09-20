@@ -46,10 +46,37 @@ const createTransporter = () => {
 };
 
 /**
+ * Check if an email uses a non-routable test domain (RFC 2606 / RFC 6761).
+ * Prevents automated test runs from bouncing DSN notifications to personal sender inboxes.
+ */
+const isNonRoutableTestDomain = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  const lower = email.toLowerCase().trim();
+  const domain = lower.split('@')[1] || '';
+  return (
+    domain.endsWith('.local') ||
+    domain.endsWith('.test') ||
+    domain.endsWith('.example') ||
+    domain === 'example.com' ||
+    domain === 'example.org' ||
+    domain === 'example.net' ||
+    domain.endsWith('.invalid')
+  );
+};
+
+/**
  * Sends a 6-digit OTP verification code via email.
  */
 const sendOtpEmail = async ({ to, name, otp }) => {
   try {
+    if (isNonRoutableTestDomain(to)) {
+      console.log(`[CivicTrack SMTP] Non-routable test domain intercepted: ${to}. Simulating delivery.`);
+      return {
+        success: true,
+        messageId: `<test-sim-${Date.now()}@civictrack.internal>`
+      };
+    }
+
     const transporter = createTransporter();
     if (!transporter) {
       console.error('[CivicTrack SMTP Error]: SMTP transporter not configured or credentials missing.');
@@ -132,8 +159,16 @@ const sendOtpEmail = async ({ to, name, otp }) => {
  */
 const sendStaffInvitationEmail = async ({ to, name, role, departmentName, setupUrl }) => {
   try {
+    if (isNonRoutableTestDomain(to)) {
+      console.log(`[CivicTrack Staff Invitation] Non-routable test domain intercepted: ${to}. Simulating delivery.`);
+      return {
+        success: true,
+        messageId: `<test-invitation-sim-${Date.now()}@civictrack.internal>`
+      };
+    }
+
     const transporter = createTransporter();
-    const from = process.env.SMTP_FROM || '"CivicTrack Operations" <admin@civictrack.gov.in>';
+    const from = env.smtp.from;
     const roleLabel = role ? role.replace('_', ' ') : 'Staff Member';
 
     const subject = `CivicTrack Invitation: Activate your ${roleLabel} Account`;
