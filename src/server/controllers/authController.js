@@ -102,12 +102,18 @@ const register = async (req, res, next) => {
       ipAddress: req.ip
     });
 
+    const hasSmtp = Boolean(env.smtp && env.smtp.user && env.smtp.password);
+    const returnOtp = !hasSmtp || env.otpDevMode;
+
     // Return verification prompt (no JWT issued until verified)
     res.status(201).json({
       success: true,
       requireVerification: true,
       email: user.email,
-      message: 'Registration initiated. A 6-digit verification code has been sent to your email.'
+      otp: returnOtp ? otpCode : undefined,
+      message: hasSmtp
+        ? 'Registration initiated. A 6-digit verification code has been sent to your email.'
+        : `Verification code: ${otpCode} (SMTP not configured on server)`
     });
   } catch (error) {
     next(error);
@@ -243,9 +249,15 @@ const resendOtp = async (req, res, next) => {
       otp: otpCode
     });
 
+    const hasSmtp = Boolean(env.smtp && env.smtp.user && env.smtp.password);
+    const returnOtp = !hasSmtp || env.otpDevMode;
+
     res.status(200).json({
       success: true,
-      message: 'A new 6-digit verification code has been dispatched to your email.'
+      otp: returnOtp ? otpCode : undefined,
+      message: hasSmtp
+        ? 'A new 6-digit verification code has been dispatched to your email.'
+        : `Fresh verification code: ${otpCode} (SMTP not configured on server)`
     });
   } catch (error) {
     next(error);

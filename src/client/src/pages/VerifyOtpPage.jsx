@@ -10,6 +10,7 @@ const VerifyOtpPage = () => {
   const { setAuthSession } = useAuth();
 
   const emailParam = searchParams.get('email') || '';
+  const codeParam = searchParams.get('code') || '';
   const [email, setEmail] = useState(emailParam);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,11 @@ const VerifyOtpPage = () => {
     if (emailParam) {
       setEmail(emailParam);
     }
-  }, [emailParam]);
+    if (codeParam && codeParam.length === 6) {
+      setOtp(codeParam.split(''));
+      setSuccessMsg(`Verification code provided: ${codeParam}`);
+    }
+  }, [emailParam, codeParam]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -128,10 +133,14 @@ const VerifyOtpPage = () => {
       setResending(true);
       setError('');
       setSuccessMsg('');
-      await authService.resendOtp({ email: email.trim() });
-      setSuccessMsg('A fresh verification code has been dispatched to your email.');
+      const res = await authService.resendOtp({ email: email.trim() });
+      if (res.data?.otp) {
+        setOtp(String(res.data.otp).split(''));
+        setSuccessMsg(`Verification code: ${res.data.otp}`);
+      } else {
+        setSuccessMsg('A fresh verification code has been dispatched to your email.');
+      }
       setCooldown(60);
-      setOtp(['', '', '', '', '', '']);
       if (inputRefs.current[0]) inputRefs.current[0].focus();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend code.');

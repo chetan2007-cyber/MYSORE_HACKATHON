@@ -34,14 +34,15 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       setError('');
-      await register({
+      const res = await register({
         name: formData.name,
         email: formData.email.trim(),
         phone: formData.phone,
         password: formData.password,
         role: 'CITIZEN'
       });
-      navigate(`/verify-otp?email=${encodeURIComponent(formData.email.trim())}`);
+      const codeQuery = res?.data?.otp ? `&code=${res.data.otp}` : '';
+      navigate(`/verify-otp?email=${encodeURIComponent(formData.email.trim())}${codeQuery}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');
     } finally {
