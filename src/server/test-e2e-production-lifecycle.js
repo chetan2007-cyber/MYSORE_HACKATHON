@@ -45,8 +45,19 @@ async function runE2EProductionLifecycle() {
 
     // 2. OTP verification
     console.log('\nStep 2: OTP Verification');
+    const crypto = require('crypto');
+    function reverseOtpHash(targetHash) {
+      if (!targetHash) return null;
+      for (let i = 100000; i <= 999999; i++) {
+        const code = String(i);
+        if (crypto.createHash('sha256').update(code).digest('hex') === targetHash) {
+          return code;
+        }
+      }
+      return null;
+    }
     const userInDb = await User.findOne({ email: citizenEmail });
-    const otpCode = userInDb.otp.code;
+    const otpCode = userInDb.otp?.code || reverseOtpHash(userInDb.otpHash || userInDb.otp?.hash);
     const verifyRes = await axios.post(`${BASE_URL}/auth/verify-otp`, {
       email: citizenEmail,
       otp: otpCode

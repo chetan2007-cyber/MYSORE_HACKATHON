@@ -25,9 +25,10 @@ const VerifyOtpPage = () => {
     if (emailParam) {
       setEmail(emailParam);
     }
-    if (codeParam && codeParam.length === 6) {
+    // Only allow code query prefill in non-production dev mode if explicitly provided
+    if (codeParam && codeParam.length === 6 && window.location.hostname === 'localhost') {
       setOtp(codeParam.split(''));
-      setSuccessMsg(`Verification code provided: ${codeParam}`);
+      setSuccessMsg(`Development auto-fill: verification code loaded.`);
     }
   }, [emailParam, codeParam]);
 
@@ -186,7 +187,7 @@ const VerifyOtpPage = () => {
           <label className="block text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
             Enter 6-Digit Code
           </label>
-          <div className="flex justify-center gap-2 sm:gap-2.5">
+          <div className="flex justify-center gap-1.5 sm:gap-2.5">
             {otp.map((digit, idx) => (
               <input
                 key={idx}
@@ -197,7 +198,7 @@ const VerifyOtpPage = () => {
                 value={digit}
                 onChange={(e) => handleDigitChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
-                className="w-10 h-12 sm:w-11 sm:h-13 text-center text-xl font-bold font-mono rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition shadow-2xs"
+                className="w-9 h-11 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-bold font-mono rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition shadow-2xs"
               />
             ))}
           </div>

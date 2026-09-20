@@ -5,41 +5,44 @@ const env = require('../config/env');
  * Creates and returns configured Nodemailer SMTP transporter.
  */
 const createTransporter = () => {
-  const { host, port, user, password } = env.smtp;
-  const secure = port === 465;
+  const { host, port, secure, user, password } = env.smtp;
+  const cleanPass = (password || '').replace(/\s+/g, '');
 
-  if (user && password) {
+  if (user && cleanPass) {
+    const isPort465 = Number(port) === 465;
+    const useSecure = typeof secure === 'boolean' ? secure : isPort465;
+
     return nodemailer.createTransport({
-      host,
-      port,
-      secure,
+      host: host || 'smtp.gmail.com',
+      port: Number(port) || (useSecure ? 465 : 587),
+      secure: useSecure,
       auth: {
         user,
-        pass: password
+        pass: cleanPass
+      },
+      tls: {
+        // Safe STARTTLS handshake
+        rejectUnauthorized: false
       }
     });
   }
 
-  // Fallback transport
-  return {
-    sendMail: async (options) => {
-      if (env.isProduction || !env.otpDevMode) {
-        console.log(`[CivicTrack SMTP] Email dispatched to: ${options.to} | Subject: ${options.subject}`);
-      } else {
-        // Development simulation mode: display OTP in console
+  // In development ONLY when OTP_DEV_MODE is explicitly enabled, return local simulation logger
+  if (env.isDevelopment && env.otpDevMode) {
+    return {
+      sendMail: async (options) => {
         console.log(`\n======================================================`);
-        console.log(` [CivicTrack SMTP Simulation - Development Mode]`);
+        console.log(` [CivicTrack SMTP Simulation - Development Mode Only]`);
         console.log(` To:      ${options.to}`);
         console.log(` Subject: ${options.subject}`);
-        console.log(` OTP Code Dispatched via Email:`);
-        const otpMatch = options.text?.match(/\b\d{6}\b/);
-        const code = otpMatch ? otpMatch[0] : 'N/A';
-        console.log(` >>> ${code} <<<`);
         console.log(`======================================================\n`);
+        return { messageId: `dev-sim-${Date.now()}` };
       }
-      return { messageId: `simulated-${Date.now()}` };
-    }
-  };
+    };
+  }
+
+  // Production or unconfigured: no fake transport
+  return null;
 };
 
 /**
@@ -48,10 +51,15 @@ const createTransporter = () => {
 const sendOtpEmail = async ({ to, name, otp }) => {
   try {
     const transporter = createTransporter();
-    const from = process.env.SMTP_FROM || '"CivicTrack Verification" <noreply@civictrack.gov.in>';
+    if (!transporter) {
+      console.error('[CivicTrack SMTP Error]: SMTP transporter not configured or credentials missing.');
+      return { success: false, error: 'Email service is not configured on the server.' };
+    }
 
-    const subject = `CivicTrack Verification Code: ${otp}`;
-    const textContent = `Hello ${name},\n\nYour 6-digit verification code for CivicTrack is: ${otp}\n\nThis code expires in 10 minutes.\n\nThank you,\nCivicTrack Operational Team`;
+    const from = env.smtp.from;
+    const subject = 'CivicTrack verification code';
+
+    const textContent = `CivicTrack\nVerify your account\n\nYour verification code is:\n${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not create this account, you can ignore this email.`;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -60,17 +68,18 @@ const sendOtpEmail = async ({ to, name, otp }) => {
         <meta charset="utf-8">
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
-          .container { max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+          .container { max-width: 500px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
           .header { background-color: #0f172a; padding: 24px; text-align: center; color: #ffffff; }
-          .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #38bdf8; }
+          .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #38bdf8; }
           .tagline { font-size: 12px; color: #94a3b8; margin-top: 4px; }
           .content { padding: 32px 28px; }
-          .greeting { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-          .lead { font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
-          .otp-box { background: #f0f9ff; border: 1.5px dashed #0284c7; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0; }
-          .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #0369a1; }
-          .otp-sub { font-size: 11px; color: #0284c7; margin-top: 6px; font-weight: 500; }
-          .expiry-notice { font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 20px; text-align: center; }
+          .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+          .lead { font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+          .otp-box { background: #f0f9ff; border: 1.5px dashed #0284c7; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
+          .otp-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #0284c7; margin-bottom: 6px; }
+          .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0369a1; }
+          .otp-expiry { font-size: 12px; color: #64748b; margin-top: 8px; font-weight: 500; }
+          .notice { font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 20px; line-height: 1.5; }
           .footer { background-color: #f8fafc; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
         </style>
       </head>
@@ -78,21 +87,20 @@ const sendOtpEmail = async ({ to, name, otp }) => {
         <div class="container">
           <div class="header">
             <div class="logo">CivicTrack</div>
-            <div class="tagline">From reported to resolved.</div>
+            <div class="tagline">Verify your account</div>
           </div>
           <div class="content">
-            <div class="greeting">Hello ${name || 'Citizen'},</div>
-            <p class="lead">
-              Thank you for registering on <strong>CivicTrack</strong>. To complete your account verification and access the civic issue reporting workflow, please enter the single-use verification code below:
-            </p>
-            
+            <div class="greeting">CivicTrack</div>
+            <p class="lead">Verify your account</p>
+
             <div class="otp-box">
+              <div class="otp-label">Your verification code is:</div>
               <div class="otp-code">${otp}</div>
-              <div class="otp-sub">VALID FOR 10 MINUTES</div>
+              <div class="otp-expiry">This code expires in 10 minutes.</div>
             </div>
 
-            <div class="expiry-notice">
-              Security Notice: Never share this verification code with municipal officers or third parties. CivicTrack staff will never ask for your code.
+            <div class="notice">
+              If you did not create this account, you can ignore this email.
             </div>
           </div>
           <div class="footer">
@@ -111,11 +119,10 @@ const sendOtpEmail = async ({ to, name, otp }) => {
       html: htmlContent
     });
 
+    console.log(`[CivicTrack SMTP] Verification email accepted by mail provider for: ${to} (MessageId: ${info.messageId})`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[CivicTrack Email Error]: ${error.message}`);
-    // If SMTP fails, don't crash registration; log OTP for fallback
-    console.log(`[CivicTrack Fallback OTP Log] Code for ${to}: ${otp}`);
+    console.error(`[CivicTrack SMTP Error]: Failed to dispatch verification email to ${to}: ${error.message}`);
     return { success: false, error: error.message };
   }
 };

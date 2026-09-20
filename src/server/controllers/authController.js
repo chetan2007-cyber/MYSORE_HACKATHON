@@ -10,6 +10,11 @@ const generateSecureOtp = () => {
   return crypto.randomInt(100000, 999999).toString();
 };
 
+// Helper to calculate SHA-256 hash of an OTP code
+const hashOtp = (otp) => {
+  return crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
+};
+
 // @desc    Register a user (initiates email OTP verification)
 // @route   POST /api/auth/register
 // @access  Public
@@ -35,6 +40,7 @@ const register = async (req, res, next) => {
     const existingUser = await User.findOne({ email: cleanEmail });
 
     const otpCode = generateSecureOtp();
+    const otpHash = hashOtp(otpCode);
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     let user;
@@ -61,7 +67,11 @@ const register = async (req, res, next) => {
       existingUser.password = password; // Will trigger pre-save bcrypt hash
       existingUser.role = 'CITIZEN'; // Strictly enforce CITIZEN
       if (phone) existingUser.phone = phone;
-      existingUser.otp = { code: otpCode, expiresAt: otpExpiresAt };
+      existingUser.otpHash = otpHash;
+      existingUser.otpExpiresAt = otpExpiresAt;
+      existingUser.otpAttempts = 0;
+      existingUser.otpLastSentAt = new Date();
+      existingUser.otp = { hash: otpHash, expiresAt: otpExpiresAt, attempts: 0 };
       existingUser.status = 'PENDING_VERIFICATION';
       existingUser.accountStatus = 'PENDING_VERIFICATION';
       user = await existingUser.save();
@@ -77,15 +87,20 @@ const register = async (req, res, next) => {
         status: 'PENDING_VERIFICATION',
         accountStatus: 'PENDING_VERIFICATION',
         isVerified: false,
+        otpHash,
+        otpExpiresAt,
+        otpAttempts: 0,
+        otpLastSentAt: new Date(),
         otp: {
-          code: otpCode,
-          expiresAt: otpExpiresAt
+          hash: otpHash,
+          expiresAt: otpExpiresAt,
+          attempts: 0
         }
       });
     }
 
-    // Dispatch OTP email via SMTP
-    await sendOtpEmail({
+    // Dispatch OTP email via SMTP provider
+    const mailResult = await sendOtpEmail({
       to: user.email,
       name: user.name,
       otp: otpCode
@@ -98,22 +113,32 @@ const register = async (req, res, next) => {
       action: 'USER_REGISTERED_PENDING_VERIFICATION',
       entity: 'User',
       entityId: user._id,
-      metadata: { email: user.email, role: user.role },
+      metadata: { email: user.email, role: user.role, emailAccepted: mailResult.success },
       ipAddress: req.ip
     });
 
-    const hasSmtp = Boolean(env.smtp && env.smtp.user && env.smtp.password);
-    const returnOtp = !hasSmtp || env.otpDevMode;
+    // In production, OTP is NEVER returned in response
+    const returnOtp = env.isDevelopment && env.otpDevMode;
+
+    if (!mailResult.success) {
+      return res.status(201).json({
+        success: false,
+        requireVerification: true,
+        email: user.email,
+        emailDelivered: false,
+        otp: returnOtp ? otpCode : undefined,
+        message: 'Account created, but we could not send the verification email. Please try sending the code again.'
+      });
+    }
 
     // Return verification prompt (no JWT issued until verified)
     res.status(201).json({
       success: true,
       requireVerification: true,
       email: user.email,
+      emailDelivered: true,
       otp: returnOtp ? otpCode : undefined,
-      message: hasSmtp
-        ? 'Registration initiated. A 6-digit verification code has been sent to your email.'
-        : `Verification code: ${otpCode} (SMTP not configured on server)`
+      message: 'Registration initiated. A 6-digit verification code has been sent to your email.'
     });
   } catch (error) {
     next(error);
@@ -153,35 +178,59 @@ const verifyOtp = async (req, res, next) => {
       return sendTokenResponse(user, 200, res, 'Account is already verified.');
     }
 
+    const activeOtpHash = user.otpHash || user.otp?.hash;
+    const activeExpiresAt = user.otpExpiresAt || user.otp?.expiresAt;
+    const attempts = user.otpAttempts || user.otp?.attempts || 0;
+
     // Check OTP existence
-    if (!user.otp || !user.otp.code) {
+    if (!activeOtpHash || !activeExpiresAt) {
       return res.status(400).json({
         success: false,
         message: 'No active verification code found. Please request a new code.'
       });
     }
 
-    // Check expiration
-    if (new Date() > new Date(user.otp.expiresAt)) {
+    // Check maximum verification attempts (5 attempts limit)
+    if (attempts >= 5) {
       return res.status(400).json({
         success: false,
-        message: 'This verification code has expired. Please click resend code to get a new code.'
+        message: 'Maximum verification attempts exceeded. Please request a new code.'
       });
     }
 
-    // Validate code
-    if (user.otp.code !== cleanOtp) {
+    // Check expiration (10 minute limit)
+    if (new Date() > new Date(activeExpiresAt)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid verification code. Please check your email and try again.'
+        message: 'This verification code has expired. Please request a new code.'
       });
     }
 
-    // Code is valid: activate account
+    // Hash submitted code and compare
+    const candidateHash = hashOtp(cleanOtp);
+    if (candidateHash !== activeOtpHash) {
+      user.otpAttempts = attempts + 1;
+      if (user.otp) user.otp.attempts = user.otpAttempts;
+      await user.save();
+
+      const remaining = Math.max(0, 5 - user.otpAttempts);
+      return res.status(400).json({
+        success: false,
+        message: remaining > 0
+          ? `Incorrect verification code. ${remaining} attempt(s) remaining.`
+          : 'Incorrect verification code. This code has been invalidated. Please request a new code.'
+      });
+    }
+
+    // Code is valid: activate citizen account
     user.status = 'ACTIVE';
     user.accountStatus = 'ACTIVE';
     user.isVerified = true;
-    user.otp = { code: null, expiresAt: null, attempts: 0 };
+    user.otpHash = null;
+    user.otpExpiresAt = null;
+    user.otpAttempts = 0;
+    user.otpLastSentAt = null;
+    user.otp = { hash: null, expiresAt: null, attempts: 0 };
     user.lastLoginAt = new Date();
     await user.save();
 
@@ -234,30 +283,52 @@ const resendOtp = async (req, res, next) => {
       });
     }
 
+    // 60-second cooldown check
+    if (user.otpLastSentAt) {
+      const elapsedMs = Date.now() - new Date(user.otpLastSentAt).getTime();
+      if (elapsedMs < 60000) {
+        const remainingSeconds = Math.ceil((60000 - elapsedMs) / 1000);
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${remainingSeconds}s before requesting another verification code.`
+        });
+      }
+    }
+
     const otpCode = generateSecureOtp();
+    const otpHash = hashOtp(otpCode);
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
+    user.otpHash = otpHash;
+    user.otpExpiresAt = otpExpiresAt;
+    user.otpAttempts = 0;
+    user.otpLastSentAt = new Date();
     user.otp = {
-      code: otpCode,
-      expiresAt: otpExpiresAt
+      hash: otpHash,
+      expiresAt: otpExpiresAt,
+      attempts: 0
     };
     await user.save();
 
-    await sendOtpEmail({
+    const mailResult = await sendOtpEmail({
       to: user.email,
       name: user.name,
       otp: otpCode
     });
 
-    const hasSmtp = Boolean(env.smtp && env.smtp.user && env.smtp.password);
-    const returnOtp = !hasSmtp || env.otpDevMode;
+    if (!mailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Could not send the verification email. Please check your email and try again.'
+      });
+    }
+
+    const returnOtp = env.isDevelopment && env.otpDevMode;
 
     res.status(200).json({
       success: true,
       otp: returnOtp ? otpCode : undefined,
-      message: hasSmtp
-        ? 'A new 6-digit verification code has been dispatched to your email.'
-        : `Fresh verification code: ${otpCode} (SMTP not configured on server)`
+      message: 'A fresh 6-digit verification code has been dispatched to your email.'
     });
   } catch (error) {
     next(error);
@@ -317,7 +388,18 @@ const login = async (req, res, next) => {
     if (user.status === 'PENDING_VERIFICATION' || user.accountStatus === 'PENDING_VERIFICATION' || !user.isVerified) {
       // Auto-dispatch a fresh code so user can verify immediately
       const otpCode = generateSecureOtp();
-      user.otp = { code: otpCode, expiresAt: new Date(Date.now() + 10 * 60 * 1000) };
+      const otpHash = hashOtp(otpCode);
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      user.otpHash = otpHash;
+      user.otpExpiresAt = otpExpiresAt;
+      user.otpAttempts = 0;
+      user.otpLastSentAt = new Date();
+      user.otp = {
+        hash: otpHash,
+        expiresAt: otpExpiresAt,
+        attempts: 0
+      };
       await user.save();
       await sendOtpEmail({ to: user.email, name: user.name, otp: otpCode });
 

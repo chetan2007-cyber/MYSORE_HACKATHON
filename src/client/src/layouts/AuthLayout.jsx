@@ -20,7 +20,7 @@ const AuthLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-6 sm:py-12 px-2.5 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900 text-sky-400 font-black text-xl shadow-md mb-3">
           CT
@@ -29,8 +29,8 @@ const AuthLayout = () => {
         <p className="text-xs text-slate-500 mt-1">From reported to resolved.</p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-8 px-6 shadow-sm rounded-xl border border-slate-200 sm:px-10">
+      <div className="mt-4 sm:mt-6 sm:mx-auto sm:w-full sm:max-w-md px-2.5 sm:px-0">
+        <div className="bg-white py-6 px-4 shadow-sm rounded-xl border border-slate-200 sm:py-8 sm:px-10">
           <Outlet />
         </div>
       </div>

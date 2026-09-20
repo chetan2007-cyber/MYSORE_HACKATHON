@@ -41,10 +41,11 @@ const RegisterPage = () => {
         password: formData.password,
         role: 'CITIZEN'
       });
-      const codeQuery = res?.data?.otp ? `&code=${res.data.otp}` : '';
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const codeQuery = isLocalhost && res?.data?.otp ? `&code=${res.data.otp}` : '';
       navigate(`/verify-otp?email=${encodeURIComponent(formData.email.trim())}${codeQuery}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.');
+      setError(err.response?.data?.message || 'Registration could not be completed. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -46,12 +46,19 @@ const clientUrl = rawClientUrl
 const port = parseInt(process.env.PORT || '5000', 10);
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1d';
 
-// In production, OTP_DEV_MODE defaults to false (never logs/returns plain OTPs)
-const otpDevMode = process.env.OTP_DEV_MODE === 'true' || (!isProduction && process.env.OTP_DEV_MODE !== 'false');
+// In production, OTP_DEV_MODE is strictly false
+const otpDevMode = !isProduction && process.env.OTP_DEV_MODE === 'true';
 
 // Cookie security flags
 const cookieSecure = process.env.COOKIE_SECURE === 'true' || isProduction;
 const cookieSameSite = process.env.COOKIE_SAME_SITE || (isProduction ? 'none' : 'lax');
+
+const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+const smtpUser = (process.env.SMTP_USER || '').trim();
+const rawSmtpPass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '';
+const smtpPassword = rawSmtpPass.trim();
+const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
+const smtpFrom = process.env.SMTP_FROM || (smtpUser ? `"CivicTrack Verification" <${smtpUser}>` : 'CivicTrack Operations <no-reply@civictrack.gov>');
 
 module.exports = {
   nodeEnv,
@@ -68,10 +75,11 @@ module.exports = {
   cookieSecure,
   cookieSameSite,
   smtp: {
-    host: process.env.SMTP_HOST || '',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    user: process.env.SMTP_USER || '',
-    password: process.env.SMTP_PASSWORD || '',
-    from: process.env.SMTP_FROM || 'CivicTrack Operations <no-reply@civictrack.gov>'
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: smtpPort,
+    secure: smtpSecure,
+    user: smtpUser,
+    password: smtpPassword,
+    from: smtpFrom
   }
 };

@@ -65,18 +65,18 @@ const Navbar = ({ onToggleSidebar }) => {
         <ConnectivityStatus />
 
         {/* Read-Only Authenticated Identity Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 shadow-2xs">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-slate-50 border border-slate-200 shadow-2xs shrink-0">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Live Authenticated Session" />
-          <div className="text-left leading-tight">
-            <div className="text-xs font-bold text-slate-900 truncate max-w-[140px] sm:max-w-[180px]">
+          <div className="text-left leading-tight min-w-0">
+            <div className="text-xs font-bold text-slate-900 truncate max-w-[70px] xs:max-w-[110px] sm:max-w-[180px]">
               {user?.name || 'User'}
             </div>
             <div className="flex items-center gap-1 text-[10px]">
-              <span className="font-semibold font-mono text-brand-700 uppercase tracking-tight">
+              <span className="font-semibold font-mono text-brand-700 uppercase tracking-tight truncate max-w-[65px] sm:max-w-none">
                 {user?.role?.replace('_', ' ')}
               </span>
               {user?.department?.name && user?.role !== 'CITIZEN' && (
-                <span className="text-slate-400 hidden sm:inline truncate max-w-[140px]">
+                <span className="text-slate-400 hidden md:inline truncate max-w-[140px]">
                   • {user.department.name}
                 </span>
               )}
@@ -106,7 +106,7 @@ const Navbar = ({ onToggleSidebar }) => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg border border-slate-200 shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-96 bg-white rounded-lg border border-slate-200 shadow-xl overflow-hidden z-50">
               <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-semibold text-slate-800">

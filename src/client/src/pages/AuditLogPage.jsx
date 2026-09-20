@@ -130,7 +130,7 @@ const AuditLogPage = () => {
               description="No system records match your query parameters."
             />
           ) : (
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[700px] text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3.5">Timestamp</th>

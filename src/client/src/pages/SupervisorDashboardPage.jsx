@@ -138,7 +138,7 @@ const SupervisorDashboardPage = () => {
         </div>
 
         {/* Top 5 Metrics Skeletons */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="p-4 rounded-lg bg-white border border-slate-200 h-24 flex flex-col justify-between">
               <div className="w-20 h-3 bg-slate-200 rounded" />
@@ -201,7 +201,7 @@ const SupervisorDashboardPage = () => {
       </div>
 
       {/* Top 5 Metrics matching Section 16 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {/* Open Cases */}
         <div className="p-3.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -285,7 +285,7 @@ const SupervisorDashboardPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[650px] text-left text-xs">
               <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase border-b border-slate-200">
                 <tr>
                   <th className="px-4 py-2.5">Case</th>
@@ -376,7 +376,7 @@ const SupervisorDashboardPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[550px] text-left text-xs">
               <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase border-b border-slate-200">
                 <tr>
                   <th className="px-4 py-2.5">Worker</th>
@@ -449,7 +449,7 @@ const SupervisorDashboardPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[650px] text-left text-xs">
               <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase border-b border-slate-200">
                 <tr>
                   <th className="px-4 py-2.5">Case ID</th>

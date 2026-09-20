@@ -64,10 +64,22 @@ async function runOtpTests() {
       `status: ${userDoc?.accountStatus}, isVerified: ${userDoc?.isVerified}`
     );
 
+    const crypto = require('crypto');
+    function reverseOtpHash(targetHash) {
+      if (!targetHash) return null;
+      for (let i = 100000; i <= 999999; i++) {
+        const code = String(i);
+        if (crypto.createHash('sha256').update(code).digest('hex') === targetHash) {
+          return code;
+        }
+      }
+      return null;
+    }
+
     assert(
-      userDoc?.otp?.code && /^\d{6}$/.test(userDoc.otp.code) && new Date(userDoc.otp.expiresAt) > new Date(),
-      'Cryptographically secure 6-digit OTP generated with future expiry timestamp',
-      `code: ${userDoc?.otp?.code}, expiresAt: ${userDoc?.otp?.expiresAt}`
+      Boolean(userDoc?.otpHash || userDoc?.otp?.hash) && new Date(userDoc.otpExpiresAt || userDoc.otp?.expiresAt) > new Date(),
+      'Cryptographically secure 6-digit OTP hash stored in MongoDB with future expiry timestamp',
+      `hash: ${userDoc?.otpHash || userDoc?.otp?.hash}, expiresAt: ${userDoc?.otpExpiresAt || userDoc?.otp?.expiresAt}`
     );
 
     // ----------------------------------------------------
@@ -107,26 +119,43 @@ async function runOtpTests() {
     assert(wrongOtpRejected, 'Invalid OTP (000000) rejected with HTTP 400');
 
     // ----------------------------------------------------
-    // TEST 4: Resend OTP
+    // TEST 4: Resend OTP (Cooldown enforcement + Successful Resend)
     // ----------------------------------------------------
-    console.log('\n--- Step 4: Resend OTP Mechanism ---');
+    console.log('\n--- Step 4: Resend OTP Mechanism & Cooldown ---');
+    let cooldownEnforced = false;
+    try {
+      await axios.post(`${BASE_URL}/auth/resend-otp`, { email: testEmail });
+    } catch (err) {
+      if (err.response?.status === 429 && err.response?.data?.message?.includes('wait')) {
+        cooldownEnforced = true;
+      }
+    }
+    assert(cooldownEnforced, '60-second resend cooldown properly enforced with HTTP 429');
+
+    // Simulate elapsed cooldown window in DB for test continuity
+    await usersColl.updateOne(
+      { email: testEmail },
+      { $set: { otpLastSentAt: new Date(Date.now() - 70 * 1000) } }
+    );
+
     const resendRes = await axios.post(`${BASE_URL}/auth/resend-otp`, {
       email: testEmail
     });
     assert(
       resendRes.status === 200 && resendRes.data.success === true,
-      'Resend OTP returns HTTP 200 success',
+      'Resend OTP returns HTTP 200 success after cooldown window',
       JSON.stringify(resendRes.data)
     );
 
     const userDocAfterResend = await usersColl.findOne({ email: testEmail });
-    assert(
-      userDocAfterResend?.otp?.code && /^\d{6}$/.test(userDocAfterResend.otp.code),
-      'Fresh 6-digit OTP code generated upon resend',
-      `new code: ${userDocAfterResend?.otp?.code}`
-    );
+    const targetHash = userDocAfterResend?.otpHash || userDocAfterResend?.otp?.hash;
+    const latestOtp = userDocAfterResend?.otp?.code || reverseOtpHash(targetHash);
 
-    const latestOtp = userDocAfterResend.otp.code;
+    assert(
+      Boolean(targetHash && latestOtp && /^\d{6}$/.test(latestOtp)),
+      'Fresh 6-digit OTP code generated, hashed, and dispatched upon resend',
+      `new hash: ${targetHash}`
+    );
 
     // ----------------------------------------------------
     // TEST 5: Verify with Valid OTP
@@ -146,8 +175,8 @@ async function runOtpTests() {
     // Verify DB state
     const userDocActive = await usersColl.findOne({ email: testEmail });
     assert(
-      userDocActive.accountStatus === 'ACTIVE' && userDocActive.isVerified === true && userDocActive.otp?.code === null,
-      'MongoDB user is now accountStatus: ACTIVE, isVerified: true, and OTP code cleared',
+      userDocActive.accountStatus === 'ACTIVE' && userDocActive.isVerified === true && !userDocActive.otpHash && !userDocActive.otp?.code,
+      'MongoDB user is now accountStatus: ACTIVE, isVerified: true, and OTP cleared',
       `status: ${userDocActive.accountStatus}, isVerified: ${userDocActive.isVerified}`
     );
 

@@ -66,8 +66,24 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    otpHash: {
+      type: String,
+      default: null
+    },
+    otpExpiresAt: {
+      type: Date,
+      default: null
+    },
+    otpAttempts: {
+      type: Number,
+      default: 0
+    },
+    otpLastSentAt: {
+      type: Date,
+      default: null
+    },
     otp: {
-      code: { type: String, default: null },
+      hash: { type: String, default: null },
       expiresAt: { type: Date, default: null },
       attempts: { type: Number, default: 0 }
     },
@@ -89,6 +105,20 @@ userSchema.pre('save', async function (next) {
     this.status = this.accountStatus;
   }
 
+  // Keep top-level otp fields and nested otp object in sync
+  if (this.isModified('otpHash')) {
+    if (!this.otp) this.otp = {};
+    this.otp.hash = this.otpHash;
+  }
+  if (this.isModified('otpExpiresAt')) {
+    if (!this.otp) this.otp = {};
+    this.otp.expiresAt = this.otpExpiresAt;
+  }
+  if (this.isModified('otpAttempts')) {
+    if (!this.otp) this.otp = {};
+    this.otp.attempts = this.otpAttempts;
+  }
+
   if (!this.isModified('password') || !this.password) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
@@ -105,15 +135,6 @@ userSchema.virtual('passwordHash').get(function () {
 });
 userSchema.virtual('invitationTokenHash').get(function () {
   return this.invitationToken;
-});
-userSchema.virtual('otpHash').get(function () {
-  return this.otp?.code;
-});
-userSchema.virtual('otpExpiresAt').get(function () {
-  return this.otp?.expiresAt;
-});
-userSchema.virtual('otpAttempts').get(function () {
-  return this.otp?.attempts;
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -168,17 +168,17 @@ const EvidenceViewer = ({ resolution, attachments = [] }) => {
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-xs"
           onClick={() => setActiveModalImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 shadow-2xl">
+          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 shadow-2xl overflow-hidden flex items-center justify-center">
             <button
               onClick={() => setActiveModalImage(null)}
-              className="absolute -top-3 -right-3 p-1.5 rounded-full bg-slate-800 text-white hover:bg-black transition"
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-white hover:bg-black transition z-10"
             >
               <X className="w-4 h-4" />
             </button>
             <img
               src={getMediaUrl(activeModalImage)}
               alt="Enlarged evidence"
-              className="max-h-[80vh] w-auto rounded object-contain"
+              className="max-h-[80vh] max-w-full w-auto rounded object-contain"
             />
           </div>
         </div>

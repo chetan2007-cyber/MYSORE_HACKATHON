@@ -308,7 +308,7 @@ const IssueDetailPage = () => {
         </div>
 
         {/* METADATA GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-100 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-100 text-xs">
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
               Location

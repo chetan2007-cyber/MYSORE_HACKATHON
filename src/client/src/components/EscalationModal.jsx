@@ -34,8 +34,8 @@ const EscalationModal = ({ isOpen, onClose, issue, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
-      <div className="bg-white rounded-lg max-w-md w-full border border-slate-200 shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs">
+      <div className="bg-white rounded-lg max-w-md w-full border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-rose-50/50">
           <div className="flex items-center gap-2">

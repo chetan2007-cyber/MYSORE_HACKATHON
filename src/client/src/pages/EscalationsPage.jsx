@@ -138,7 +138,7 @@ const EscalationsPage = () => {
               description="There are currently no escalations recorded under this status. All department SLA deadlines are operating within normal parameters."
             />
           ) : (
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[700px] text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3.5">Case ID</th>
@@ -209,7 +209,7 @@ const EscalationsPage = () => {
       {/* Supervisor Intervention Modal */}
       {selectedEscalation && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-lg max-w-md w-full border border-slate-200 shadow-xl overflow-hidden">
+          <div className="bg-white rounded-lg max-w-md w-full border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-rose-600" />
@@ -242,7 +242,7 @@ const EscalationsPage = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Action Type *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setResolveAction('ACKNOWLEDGED')}

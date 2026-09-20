@@ -196,7 +196,7 @@ async function runAudit() {
     const createdUser = await User.findOne({ email: testRegEmail });
     assert(createdUser !== null, 'Registered user written to MongoDB', 'User not found in DB');
     assert(createdUser?.role === 'CITIZEN', 'Public registration strictly forced to CITIZEN role (ADMIN escalation blocked)', `Stored role: ${createdUser?.role}`);
-    assert(Boolean(createdUser?.otp?.code), 'Verification OTP generated in MongoDB', 'OTP missing');
+    assert(Boolean(createdUser?.otpHash || createdUser?.otp?.code), 'Verification OTP generated in MongoDB', 'OTP missing');
 
     // Clean up test user
     if (createdUser) await User.deleteOne({ _id: createdUser._id });

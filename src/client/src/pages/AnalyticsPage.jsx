@@ -64,7 +64,7 @@ const AnalyticsPage = () => {
       {loading && !data ? (
         <SkeletonCard count={4} />
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
             <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block mb-1">
               Total Municipal Cases
@@ -99,18 +99,19 @@ const AnalyticsPage = () => {
         </div>
       )}
 
-      {/* 7-Day Trend: Reported vs Resolved */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
+      {/* 7-Day Resolution Velocity Chart matching Section 21 */}
+      <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
-              7-Day Case Velocity: Reported vs Resolved
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              7-Day Remediation Velocity
             </h3>
-            <p className="text-xs text-slate-500">
-              Daily comparison of incoming complaints versus verified completions.
+            <p className="text-[11px] text-slate-500">
+              Daily comparison between inbound reported issues and physical resolutions.
             </p>
           </div>
-          <div className="flex items-center gap-3 text-xs">
+
+          <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-slate-800" />
               <span className="text-slate-600 font-medium">Reported</span>
@@ -122,42 +123,44 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 pt-6 pb-2 items-end h-48 border-b border-slate-100">
-          {timelineTrends.map((t, i) => {
-            const repHeight = Math.round((t.reported / maxTrend) * 140);
-            const resHeight = Math.round((t.resolved / maxTrend) * 140);
-            return (
-              <div key={i} className="flex flex-col items-center gap-2 h-full justify-end group">
-                <div className="flex items-end gap-1.5 h-full">
-                  {/* Reported bar */}
-                  <div
-                    style={{ height: `${Math.max(repHeight, 4)}px` }}
-                    className="w-4 sm:w-6 bg-slate-800 rounded-t transition-all group-hover:bg-slate-700 relative"
-                    title={`Reported: ${t.reported}`}
-                  >
-                    {t.reported > 0 && (
-                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-slate-700">
-                        {t.reported}
-                      </span>
-                    )}
+        <div className="overflow-x-auto pb-2">
+          <div className="grid grid-cols-7 gap-2 pt-6 pb-2 items-end h-48 border-b border-slate-100 min-w-[480px]">
+            {timelineTrends.map((t, i) => {
+              const repHeight = Math.round((t.reported / maxTrend) * 140);
+              const resHeight = Math.round((t.resolved / maxTrend) * 140);
+              return (
+                <div key={i} className="flex flex-col items-center gap-2 h-full justify-end group">
+                  <div className="flex items-end gap-1.5 h-full">
+                    {/* Reported bar */}
+                    <div
+                      style={{ height: `${Math.max(repHeight, 4)}px` }}
+                      className="w-4 sm:w-6 bg-slate-800 rounded-t transition-all group-hover:bg-slate-700 relative"
+                      title={`Reported: ${t.reported}`}
+                    >
+                      {t.reported > 0 && (
+                        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-slate-700">
+                          {t.reported}
+                        </span>
+                      )}
+                    </div>
+                    {/* Resolved bar */}
+                    <div
+                      style={{ height: `${Math.max(resHeight, 4)}px` }}
+                      className="w-4 sm:w-6 bg-emerald-600 rounded-t transition-all group-hover:bg-emerald-500 relative"
+                      title={`Resolved: ${t.resolved}`}
+                    >
+                      {t.resolved > 0 && (
+                        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-emerald-700">
+                          {t.resolved}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {/* Resolved bar */}
-                  <div
-                    style={{ height: `${Math.max(resHeight, 4)}px` }}
-                    className="w-4 sm:w-6 bg-emerald-600 rounded-t transition-all group-hover:bg-emerald-500 relative"
-                    title={`Resolved: ${t.resolved}`}
-                  >
-                    {t.resolved > 0 && (
-                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-emerald-700">
-                        {t.resolved}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">{t.label}</span>
                 </div>
-                <span className="text-[11px] font-mono text-slate-500">{t.label}</span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -104,7 +104,7 @@ const OfficerDashboardPage = () => {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div
           onClick={() => setActiveTab('unassigned')}
           className={`p-3.5 rounded-lg border cursor-pointer transition ${
@@ -173,10 +173,10 @@ const OfficerDashboardPage = () => {
 
       {/* Triage Workspace Tabs */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
-        <div className="flex border-b border-slate-200 px-4 bg-slate-50/60">
+        <div className="flex border-b border-slate-200 px-2 sm:px-4 bg-slate-50/60 overflow-x-auto">
           <button
             onClick={() => setActiveTab('unassigned')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
+            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeTab === 'unassigned'
                 ? 'border-brand-600 text-brand-700 bg-white'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -190,7 +190,7 @@ const OfficerDashboardPage = () => {
 
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
+            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeTab === 'pending'
                 ? 'border-brand-600 text-brand-700 bg-white'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -204,7 +204,7 @@ const OfficerDashboardPage = () => {
 
           <button
             onClick={() => setActiveTab('at_risk')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
+            className={`py-3 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeTab === 'at_risk'
                 ? 'border-brand-600 text-brand-700 bg-white'
                 : 'border-transparent text-slate-500 hover:text-slate-800'

@@ -95,7 +95,7 @@ const DashboardPage = () => {
       {loading && !data ? (
         <SkeletonCard count={7} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <MetricCard
             label="Open Issues"
             value={metrics.openIssues}
@@ -195,7 +195,7 @@ const DashboardPage = () => {
               description="No civic issues currently meet this critical triage condition. All assignments and deadlines are on schedule."
             />
           ) : (
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[750px] text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3.5">Case ID</th>

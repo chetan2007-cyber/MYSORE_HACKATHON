@@ -423,7 +423,7 @@ const ReportIssuePage = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs space-y-4"
+        className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-2xs space-y-4"
       >
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -566,7 +566,7 @@ const ReportIssuePage = () => {
           </div>
 
           {overrideCoords ? (
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 mb-0.5">
                   Latitude (-90 to +90)

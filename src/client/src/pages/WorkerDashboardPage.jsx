@@ -125,7 +125,7 @@ const WorkerDashboardPage = () => {
       )}
 
       {/* Quick Status Count Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3 bg-cyan-50/50 rounded-lg border border-cyan-200 text-cyan-900">
           <span className="text-[11px] uppercase font-semibold text-cyan-700">New Assignments</span>
           <div className="text-2xl font-bold mt-1">{pendingAck.length}</div>

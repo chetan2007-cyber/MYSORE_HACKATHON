@@ -88,7 +88,7 @@ const AdminDashboardPage = () => {
           <span>User Ecosystem Breakdown</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
             <span className="text-[11px] font-semibold text-slate-500">Total Users</span>
             <div className="text-2xl font-bold text-slate-900 font-mono mt-1">

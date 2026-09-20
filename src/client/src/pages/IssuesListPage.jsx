@@ -144,7 +144,7 @@ const IssuesListPage = () => {
         </form>
 
         {/* Filter Dropdowns Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 pt-1">
           {/* Status Filter */}
           <div>
             <label className="block text-[10px] font-semibold uppercase text-slate-500 mb-1">
@@ -265,7 +265,7 @@ const IssuesListPage = () => {
               }
             />
           ) : (
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[800px] text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3.5">Case ID</th>
